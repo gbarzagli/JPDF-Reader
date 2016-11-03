@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
 import br.com.reader.pdf.exception.ImpossibleToReadException;
@@ -29,12 +28,18 @@ public class PDFHandler {
 	private PDFRenderer renderer;
 	
 	/**
+	 * Objeto que armazena o caminho ate o arquivo PDF
+	 */
+	private String pathname;
+	
+	/**
 	 * Cria uma instancia do manipulador de PDF.
 	 * @param file arquivo referente ao PDF
 	 * @throws InvalidFileException se nao for possivel ler o arquivo.
 	 */
 	public PDFHandler(File file) throws InvalidFileException {
 		try {
+			this.pathname = file.getAbsolutePath();
 			this.document = PDDocument.load(file);
 			this.renderer = new PDFRenderer(document);
 		} catch (IOException e) {
@@ -55,12 +60,11 @@ public class PDFHandler {
 		}
 		
 		try {
+			FileUtil.save(pathname, page);
 			return renderer.renderImage(page);
 		} catch (IOException e) {
 			throw new ImpossibleToReadException("Não foi possível ler o arquivo.", e);
 		}
 	}
 	
-	
-
 }

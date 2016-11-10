@@ -21,15 +21,15 @@ public class FileUtil {
 	
 	/**
 	 * Salva o caminho absoluto ate o arquivo e o numero da pagina
-	 * @param pathname - caminho absoluto ate o arquivo PDF
+	 * @param file - arquivo PDF
 	 * @param page - numero da pagina
 	 * @throws IOException caso de algo errado ao criar ou escrever no arquivo
 	 */
-	protected static void save(String pathname, int page) throws IOException {
+	protected static void save(File file, int page) throws IOException {
 		FileWriter fwriter = null;
 		try {
 			fwriter = new FileWriter(fileStorage);
-			fwriter.write(pathname + ";" + page);
+			fwriter.write(file.getAbsolutePath() + ";" + page);
 			fwriter.flush();
 		} finally {
 			if (fwriter != null) {

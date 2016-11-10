@@ -28,9 +28,9 @@ public class PDFHandler {
 	private PDFRenderer renderer;
 	
 	/**
-	 * Objeto que armazena o caminho ate o arquivo PDF
+	 * Objeto que armazena o arquivo PDF
 	 */
-	private String pathname;
+	private File file;
 	
 	/**
 	 * Cria uma instancia do manipulador de PDF.
@@ -38,13 +38,21 @@ public class PDFHandler {
 	 * @throws InvalidFileException se nao for possivel ler o arquivo.
 	 */
 	public PDFHandler(File file) throws InvalidFileException {
+		this.file = file;
+		load();
+	}
+	
+	/**
+	 * Carrega o arquivo.
+	 * @throws InvalidFileException se nao for possivel ler o arquivo.
+	 */
+	private void load() throws InvalidFileException {
 		try {
-			this.pathname = file.getAbsolutePath();
 			this.document = PDDocument.load(file);
 			this.renderer = new PDFRenderer(document);
 		} catch (IOException e) {
 			throw new InvalidFileException("Tipo de arquivo inválido.", e);
-		} 
+		}
 	}
 	
 	/**
@@ -53,17 +61,31 @@ public class PDFHandler {
 	 * @return BufferedImage imagem bufferizada para ser exibida.
 	 * @throws InexistentPageException se a pagina requisitada nao existe.
 	 * @throws ImpossibleToReadException se nao for possivel ler a pagina.
+	 * @throws InvalidFileException 
 	 */
 	public BufferedImage getPDFPageAsImage(int page) throws InexistentPageException, ImpossibleToReadException {
-		if(page >= document.getNumberOfPages()) {
-			throw new InexistentPageException();
-		}
-		
 		try {
-			FileUtil.save(pathname, page);
+			if (document == null) {
+				load();
+			}
+			
+			if(page >= document.getNumberOfPages()) {
+				throw new InexistentPageException();
+			}
+			
+			FileUtil.save(file, page);
 			return renderer.renderImage(page);
 		} catch (IOException e) {
 			throw new ImpossibleToReadException("Não foi possível ler o arquivo.", e);
+		} catch (InvalidFileException e) {
+			throw new ImpossibleToReadException("Não foi possível ler o arquivo.", e);
+		} finally {
+			try {
+				this.document.close();
+				this.document = null;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	

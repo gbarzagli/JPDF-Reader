@@ -52,7 +52,7 @@ public class PDFHandler {
 	 * @param page numero da pagina (0 - n)
 	 * @return BufferedImage imagem bufferizada para ser exibida.
 	 * @throws InexistentPageException se a pagina requisitada nao existe.
-	 * @throws ImpossibleToReadException se nao for possivel ler a pagina
+	 * @throws ImpossibleToReadException se nao for possivel ler a pagina.
 	 */
 	public BufferedImage getPDFPageAsImage(int page) throws InexistentPageException, ImpossibleToReadException {
 		if(page >= document.getNumberOfPages()) {

@@ -12,11 +12,14 @@ import java.util.StringTokenizer;
 import br.com.reader.pdf.exception.ImpossibleToReadException;
 import br.com.reader.pdf.exception.InexistentPageException;
 import br.com.reader.pdf.exception.InvalidFileException;
+import br.com.reader.pdf.model.FileUtil;
+import br.com.reader.pdf.model.LastReadInfo;
 import br.com.reader.pdf.model.PDFHandler;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -59,9 +62,9 @@ public class MainPageController implements Initializable{
 	private BufferedImage imageBuffered = null;
 	
 	/**
-	 * Objeto que armazena o caminho ate o arquivo PDF.
+	 * Objeto que armazena o arquivo PDF.
 	 */
-	private String pathName; 
+	private File file; 
 	
 	/**
 	 * Variável que armazena a pagina que está.
@@ -99,24 +102,15 @@ public class MainPageController implements Initializable{
 		buttonNext.setGraphic(new ImageView(imageButtonNext));
 		buttonPrevious.setGraphic(new ImageView(imageButtonPrevious));
 		
-		//carregando o arquivo que guarda o ultimo pdf aberto.
-		File file = new File("jpdf-storage.txt");
-		
-		//Carregando o ultimo pdf aberto, se existir
-		if (file.exists()){
-			try {
-				String dados = new String(Files.readAllBytes(file.toPath()));
-				StringTokenizer st = new StringTokenizer(dados);
-				pathName = st.nextToken(";");
-				page = Integer.parseInt(st.nextToken(";")); 
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}else{
+		try {
+			LastReadInfo lastReadInfo = FileUtil.reloadLastRead();
+			this.file = lastReadInfo.file;
+			this.page = lastReadInfo.page;
+			
+			showImage();
+		} catch (IOException e) {
 			page = 0;
 		}
-		
-		showImage();
 	}
 	
 	/**
@@ -125,19 +119,40 @@ public class MainPageController implements Initializable{
 	 */
 	public void showImage(){
 		try {
-			pdf = new PDFHandler(new File(pathName));
+			pdf = new PDFHandler(file);
 			pages = pdf.getNumberOfPages();
 		} catch (InvalidFileException e) {
-			e.printStackTrace();
+			 Alert dialog = new Alert(Alert.AlertType.ERROR);
+			 dialog.setTitle("Arquivo inválido");
+			 dialog.setHeaderText("O arquivo selecionado não é um PDF");
+			 dialog.setContentText("Este programa só lê arquivos PDF.\nPor favor, selecione um arquivo do tipo PDF.");
+			 dialog.showAndWait();
 		}
 		
 		try {
 			imageBuffered = pdf.getPDFPageAsImage(page);
 		} catch (InexistentPageException e) {
-			
-			e.printStackTrace();
+			if (e.isEndOfFile()) {
+				Alert dialog = new Alert(Alert.AlertType.INFORMATION);
+				dialog.setTitle("");
+				dialog.setHeaderText("Você chegou ao fim do arquivo.");
+				dialog.setContentText("Não há mais páginas a serem visualizadas.");
+				dialog.showAndWait();
+				page = pages - 1;
+			} else {
+				Alert dialog = new Alert(Alert.AlertType.INFORMATION);
+				dialog.setTitle("");
+				dialog.setHeaderText("Você chegou ao inicio do arquivo.");
+				dialog.setContentText("Não há mais páginas anteriores.");
+				dialog.showAndWait();
+				page = 0;
+			}
 		} catch (ImpossibleToReadException e) {
-			e.printStackTrace();
+			Alert dialog = new Alert(Alert.AlertType.ERROR);
+			dialog.setTitle("Arquivo não pode ser lido");
+			dialog.setHeaderText("O arquivo não pôde ser lido.");
+			dialog.setContentText("O arquivo selecionado não pôde ser lido.\nIsso pode ter acontecido por o arquivo estar corrompido.");
+			dialog.showAndWait();
 		}
 		
 		Image image = SwingFXUtils.toFXImage(imageBuffered, null);
@@ -151,18 +166,18 @@ public class MainPageController implements Initializable{
 	
 	@FXML
 	public void handleButtonNext(){
-		if (page + 1 < pages){
+		if (page < pages){
 			page++;
-			showImage();
 		}
+		showImage();
 	}
 	
 	@FXML
 	public void handleButtonPrevious(){
-		if (page > 0){
+		if (page >= 0){
 			page--;
-			showImage();
 		}
+		showImage();
 	}
 	
 	@FXML
@@ -171,7 +186,7 @@ public class MainPageController implements Initializable{
 		File file = fileChooser.showOpenDialog(null);
 		page = 0;
 		if (file != null){
-			pathName = file.getAbsolutePath();
+			this.file = file;
 			showImage();
 		}
 	}

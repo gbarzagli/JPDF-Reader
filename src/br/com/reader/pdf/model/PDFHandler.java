@@ -70,7 +70,9 @@ public class PDFHandler {
 			}
 			
 			if(page >= getNumberOfPages()) {
-				throw new InexistentPageException();
+				throw new InexistentPageException(true);
+			} else if(page < 0) {
+				throw new InexistentPageException(false);
 			}
 			
 			FileUtil.save(file, page);

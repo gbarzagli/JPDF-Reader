@@ -69,7 +69,7 @@ public class PDFHandler {
 				load();
 			}
 			
-			if(page >= document.getNumberOfPages()) {
+			if(page >= getNumberOfPages()) {
 				throw new InexistentPageException();
 			}
 			
@@ -87,6 +87,14 @@ public class PDFHandler {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * Pega a quantidade de paginas do pdf
+	 * @return o numero de paginas do pdf
+	 */
+	public int getNumberOfPages(){
+		return document.getNumberOfPages();
 	}
 	
 }

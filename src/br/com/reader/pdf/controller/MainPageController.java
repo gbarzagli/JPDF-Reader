@@ -6,9 +6,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
+
 import br.com.reader.pdf.exception.ImpossibleToReadException;
 import br.com.reader.pdf.exception.InexistentPageException;
 import br.com.reader.pdf.exception.InvalidFileException;
@@ -62,21 +61,6 @@ public class MainPageController implements Initializable {
 	 */
 	private BufferedImage imageBuffered = null;
 
-	/**
-	 * Objeto que armazena o arquivo PDF.
-	 */
-	private File file;
-
-	/**
-	 * Variável que armazena a pagina que está.
-	 */
-	private int page;
-
-	/**
-	 * Variável que armazena a quantidade de paginas do pdf.
-	 */
-	private int pages;
-
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 
@@ -105,12 +89,13 @@ public class MainPageController implements Initializable {
 
 		try {
 			LastReadInfo lastReadInfo = FileUtil.reloadLastRead();
-			this.file = lastReadInfo.file;
-			this.page = lastReadInfo.page;
-
-			showImage();
+			File file = lastReadInfo.file;
+			int page = lastReadInfo.page;
+			
+			
+			buildPDFHandler(file);
+			showImage(page);
 		} catch (IOException e) {
-			page = 0;
 		}
 	}
 
@@ -120,21 +105,17 @@ public class MainPageController implements Initializable {
 	 * @param page
 	 *            valor referente a pagina que sera mostrada.
 	 */
-	public void showImage() {
-		if (file != null) {
-			try {
-				pdf = new PDFHandler(file);
-				pages = pdf.getNumberOfPages();
-			} catch (InvalidFileException e) {
-				Alert dialog = new Alert(Alert.AlertType.ERROR);
-				dialog.setTitle("Arquivo inválido");
-				dialog.setHeaderText("O arquivo selecionado não é um PDF");
-				dialog.setContentText("Este programa só lê arquivos PDF.\nPor favor, selecione um arquivo do tipo PDF.");
-				dialog.showAndWait();
-			}
-	
+	private void showImage(int page) {
+		if (pdf != null) {
 			try {
 				imageBuffered = pdf.getPDFPageAsImage(page);
+				
+				Image image = SwingFXUtils.toFXImage(imageBuffered, null);
+				
+				imageView.setFitHeight(image.getHeight());
+				imageView.setFitWidth(image.getWidth());
+		
+				imageView.setImage(image);
 			} catch (InexistentPageException e) {
 				if (e.isEndOfFile()) {
 					Alert dialog = new Alert(Alert.AlertType.INFORMATION);
@@ -142,14 +123,12 @@ public class MainPageController implements Initializable {
 					dialog.setHeaderText("Você chegou ao fim do arquivo.");
 					dialog.setContentText("Não há mais páginas a serem visualizadas.");
 					dialog.showAndWait();
-					page = pages - 1;
 				} else {
 					Alert dialog = new Alert(Alert.AlertType.INFORMATION);
 					dialog.setTitle("");
 					dialog.setHeaderText("Você chegou ao inicio do arquivo.");
 					dialog.setContentText("Não há mais páginas anteriores.");
 					dialog.showAndWait();
-					page = 0;
 				}
 			} catch (ImpossibleToReadException e) {
 				Alert dialog = new Alert(Alert.AlertType.ERROR);
@@ -159,40 +138,42 @@ public class MainPageController implements Initializable {
 						"O arquivo selecionado não pôde ser lido.\nIsso pode ter acontecido por o arquivo estar corrompido.");
 				dialog.showAndWait();
 			}
+		}
+	}
 	
-			Image image = SwingFXUtils.toFXImage(imageBuffered, null);
-	
-			imageView.setFitHeight(image.getHeight());
-			imageView.setFitWidth(image.getWidth());
-	
-			imageView.setImage(image);
+	private void buildPDFHandler(File file) {
+		try {
+			pdf = new PDFHandler(file);
+		} catch (InvalidFileException e) {
+			Alert dialog = new Alert(Alert.AlertType.ERROR);
+			dialog.setTitle("Arquivo inválido");
+			dialog.setHeaderText("O arquivo selecionado não é um PDF");
+			dialog.setContentText("Este programa só lê arquivos PDF.\nPor favor, selecione um arquivo do tipo PDF.");
+			dialog.showAndWait();
 		}
 	}
 
 	@FXML
 	public void handleButtonNext() {
-		if (page < pages) {
-			page++;
-		}
-		showImage();
+		int page = pdf.getNextPage();
+		showImage(page);
 	}
 
 	@FXML
 	public void handleButtonPrevious() {
-		if (page >= 0) {
-			page--;
-		}
-		showImage();
+		int page = pdf.getPreviousPage();
+		showImage(page);
 	}
 
 	@FXML
 	public void handleButtonMenuItemSearch() {
 		FileChooser fileChooser = new FileChooser();
 		File file = fileChooser.showOpenDialog(null);
-		page = 0;
+		
 		if (file != null) {
-			this.file = file;
-			showImage();
+			buildPDFHandler(file);
+			int page = pdf.getActualPage();
+			showImage(page);
 		}
 	}
 }

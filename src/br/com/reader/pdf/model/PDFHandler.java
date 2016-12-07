@@ -33,12 +33,18 @@ public class PDFHandler {
 	private File file;
 	
 	/**
+	 * Variável que armazena a pagina que está.
+	 */
+	private int page;
+	
+	/**
 	 * Cria uma instancia do manipulador de PDF.
 	 * @param file arquivo referente ao PDF
 	 * @throws InvalidFileException se nao for possivel ler o arquivo.
 	 */
 	public PDFHandler(File file) throws InvalidFileException {
 		this.file = file;
+		this.page = 0;
 		load();
 	}
 	
@@ -70,8 +76,10 @@ public class PDFHandler {
 			}
 			
 			if(page >= getNumberOfPages()) {
+				this.page = getNumberOfPages() - 1;
 				throw new InexistentPageException(true);
 			} else if(page < 0) {
+				this.page = 0;
 				throw new InexistentPageException(false);
 			}
 			
@@ -91,11 +99,53 @@ public class PDFHandler {
 		}
 	}
 	
+	public void setPage(int page) {
+		this.page = page;
+	}
+	
+	/**
+	 * Retorna a proxima pagina
+	 * @return retorna a proxima pagina
+	 */
+	public int getNextPage() {
+		if (page < getNumberOfPages()) {
+			page++;
+		}
+		return page;
+	}
+	
+	/**
+	 * Retorna a pagina atual.
+	 * @return retorna a pagina atual
+	 */
+	public int getActualPage() {
+		return page;
+	}
+	
+	/**
+	 * Retorna uma pagina.
+	 * @return retorna a pagina anterior
+	 */
+	public int getPreviousPage() {
+		if (page >= 0) {
+			page--;
+		}
+		return page;
+	}
+	
 	/**
 	 * Pega a quantidade de paginas do pdf
 	 * @return o numero de paginas do pdf
 	 */
 	public int getNumberOfPages(){
+		if (document == null) {
+			try { 
+				load();
+			} catch (InvalidFileException e) {
+				return -1;
+			}
+		}
+		
 		return document.getNumberOfPages();
 	}
 	
